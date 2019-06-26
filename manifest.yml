@@ -1,4 +1,4 @@
 applications:
-- name: kashif-test
+- name: assignment1
   random-route: true
-  memory: 64M
+  memory: 256M
