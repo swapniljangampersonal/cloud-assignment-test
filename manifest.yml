@@ -1,0 +1,4 @@
+applications:
+- name: assignment1
+  random-route: true
+  memory: 256M
