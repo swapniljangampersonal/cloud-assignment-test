@@ -31,7 +31,7 @@ def background_thread():
     handler = ModHandler()
     wm = pyinotify.WatchManager()
     notifier = pyinotify.Notifier(wm, handler)
-    wm.add_watch(session.get('static/test.txt', False), pyinotify.IN_CLOSE_WRITE)
+    wm.add_watch('static/test.txt', pyinotify.IN_CLOSE_WRITE)
     notifier.loop()
 
 @socketio.on('connect')
