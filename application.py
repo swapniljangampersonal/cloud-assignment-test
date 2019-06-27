@@ -65,7 +65,7 @@ def get_earthquakes():
     conn = get_connection()
     cur = conn.cursor()
     #cur.execute("SELECT time,latitude,longitude,depth,mag,rms,place FROM earthquake WHERE (%s = '' or %s = '' or mag BETWEEN %s AND %s) AND (%s = '' or time BETWEEN date('now', '-%s days') AND date('now')) AND (%s = '' OR %s * sin_lat + %s * cos_lat * (cos_long * %s + sin_long * %s) > %s)", (mag_from, mag_to, mag_from, mag_to, days, days,CUR_sin_lat, CUR_sin_lat, CUR_cos_lat, CUR_cos_lng, CUR_sin_lng, cos_allowed_distance))
-    cur.execute("SELECT time,latitude,longitude,depth,mag,rms,place FROM earthquake WHERE (%s = '' or %s = '' or mag BETWEEN %s AND %s) AND (%s = '' OR %s * sin_lat + %s * cos_lat * (cos_long * %s + sin_long * %s) > %s)", (mag_from, mag_to, mag_from, mag_to,CUR_sin_lat, CUR_sin_lat, CUR_cos_lat, CUR_cos_lng, CUR_sin_lng, cos_allowed_distance))
+    cur.execute("SELECT * FROM earthquake WHERE (%s = '' or %s = '' or mag BETWEEN %s AND %s)", (mag_from, mag_to, mag_from, mag_to))
     res = cur.fetchall()
     return render_template('test.html', result=res, content_type='application/json')
 
