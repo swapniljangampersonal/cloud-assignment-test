@@ -4,3 +4,4 @@ python-dateutil
 pytz
 numpy
 flask_mysqldb
+Flask-Session
