@@ -13,11 +13,12 @@ import numpy
 
 application = Flask(__name__)
 
-application.config['MYSQL_HOST'] = 'mydbinstance.cbng0ho7cadi.us-east-2.rds.amazonaws.com'
-application.config['MYSQL_USER'] = 'swapnil'
-application.config['MYSQL_PASSWORD'] = os.environ['MYSQL_PASSWORD']
-application.config['MYSQL_DB'] = os.environ['MYSQL_DB']
-mysql = MySQL(application)
+if ‘RDS_HOSTNAME’ in os.environ:
+    application.config['MYSQL_HOST'] = os.environ['RDS_HOSTNAME']
+    application.config['MYSQL_USER'] = os.environ['RDS_USER']
+    application.config['MYSQL_PASSWORD'] = os.environ['RDS_PASSWORD']
+    application.config['MYSQL_DB'] = os.environ['RDS_DB_NAME']
+    mysql = MySQL(application)
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
