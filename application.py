@@ -10,15 +10,16 @@ from timezonefinder import TimezoneFinder
 import sqlite3
 import math
 import numpy
+import constants
 
 application = Flask(__name__)
 
-if 'RDS_HOSTNAME' in os.environ:
-    application.config['MYSQL_HOST'] = os.environ['RDS_HOSTNAME']
-    application.config['MYSQL_USER'] = os.environ['RDS_USER']
-    application.config['MYSQL_PASSWORD'] = os.environ['RDS_PASSWORD']
-    application.config['MYSQL_DB'] = os.environ['RDS_DB_NAME']
-    mysql = MySQL(application)
+application.config['MYSQL_HOST'] = constants.MYSQL_HOST
+application.config['MYSQL_USER'] = constants.MYSQL_USERNAME
+application.config['MYSQL_PASSWORD'] = constants.MYSQL_PASSWORD
+application.config['MYSQL_DB'] = constants.MYSQL_DB
+    
+mysql = MySQL(application)
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
