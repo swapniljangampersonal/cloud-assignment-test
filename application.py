@@ -1,15 +1,8 @@
 from flask import Flask, render_template, request, session
-from flask_mysqldb import MySQL
+from datetime import datetime
 import os
-import csv
-import dateutil.parser
-from datetime import datetime, timedelta
-from pytz import timezone
-import pytz
-from timezonefinder import TimezoneFinder
-import sqlite3
-import math
-import numpy
+from flask_socketio import SocketIO
+import pyinotify
 
 SESSION_TYPE = 'filesystem'
 application = Flask(__name__)
@@ -20,18 +13,26 @@ application = Flask(__name__)
 # application.config['MYSQL_DB'] = os.environ['MYSQL_DB']
 application.secret_key = 'super secret key'
 application.config['SESSION_TYPE'] = 'filesystem'
+socketio = SocketIO(application)
 # mysql = MySQL(application)
-
-APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-
-tf = TimezoneFinder()
-fmt = "%Y-%m-%d %H:%M:%S.%f"
 
 print(os.getenv("PORT"))
 port = int(os.getenv("PORT", 5000))
 
-def get_connection():
-    return mysql.connection
+thread = None
+
+
+class ModHandler(pyinotify.ProcessEvent):
+    def process_IN_CLOSE_WRITE(self, evt):
+        socketio.emit('file updated')
+
+
+def background_thread():
+    handler = ModHandler()
+    wm = pyinotify.WatchManager()
+    notifier = pyinotify.Notifier(wm, handler)
+    wm.add_watch(session.get('toggle', False), pyinotify.IN_CLOSE_WRITE)
+    notifier.loop()
 
 @application.route('/')
 def hello_world():
@@ -45,7 +46,7 @@ def hello_world():
         session['toggle'] = True
     response_time = datetime.now()
     elapsed_time = response_time - request_received
-    return render_template("index.html", result=res, request_received=request_received, response_time=response_time, elapsed_time=elapsed_time)
+    return render_template("index.html", result=res, request_received=request_received, response_time=response_time, elapsed_time=elapsed_time, async_mode=socketio.async_mode)
 
 # @application.route('/earthquake', methods=['GET'])
 # def get_earthquakes():
@@ -165,6 +166,7 @@ def hello_world():
 #     return render_template("test3.html", result=res)
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=port, debug=True)
+    # application.run(host='0.0.0.0', port=port, debug=True)
     # sess.init_app(application)
     session.init_app(application)
+    socketio.run(application, debug=True)

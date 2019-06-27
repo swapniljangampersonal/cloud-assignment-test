@@ -5,3 +5,4 @@ pytz
 numpy
 flask_mysqldb
 Flask-Session
+pyinotify
