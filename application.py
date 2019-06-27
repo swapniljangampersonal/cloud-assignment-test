@@ -13,11 +13,11 @@ import numpy
 
 application = Flask(__name__)
 
-application.config['MYSQL_HOST'] = 'mydbinstance.cbng0ho7cadi.us-east-2.rds.amazonaws.com'
-application.config['MYSQL_USER'] = 'swapnil'
-application.config['MYSQL_PASSWORD'] = os.environ['MYSQL_PASSWORD']
-application.config['MYSQL_DB'] = os.environ['MYSQL_DB']
-mysql = MySQL(application)
+# application.config['MYSQL_HOST'] = 'mydbinstance.cbng0ho7cadi.us-east-2.rds.amazonaws.com'
+# application.config['MYSQL_USER'] = 'swapnil'
+# application.config['MYSQL_PASSWORD'] = os.environ['MYSQL_PASSWORD']
+# application.config['MYSQL_DB'] = os.environ['MYSQL_DB']
+# mysql = MySQL(application)
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -28,7 +28,7 @@ print(os.getenv("PORT"))
 port = int(os.getenv("PORT", 5000))
 
 def get_connection():
-    return mysql.connection
+    return sqlite3.connect('static/earth.db')
 
 @application.route('/')
 def hello_world():
