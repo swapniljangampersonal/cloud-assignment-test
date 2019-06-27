@@ -13,7 +13,7 @@ import numpy
 
 application = Flask(__name__)
 
-if ‘RDS_HOSTNAME’ in os.environ:
+if 'RDS_HOSTNAME' in os.environ:
     application.config['MYSQL_HOST'] = os.environ['RDS_HOSTNAME']
     application.config['MYSQL_USER'] = os.environ['RDS_USER']
     application.config['MYSQL_PASSWORD'] = os.environ['RDS_PASSWORD']
