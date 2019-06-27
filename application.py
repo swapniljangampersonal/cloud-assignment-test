@@ -10,14 +10,13 @@ from timezonefinder import TimezoneFinder
 import sqlite3
 import math
 import numpy
-import constants
 
 application = Flask(__name__)
 
-application.config['MYSQL_HOST'] = constants.MYSQL_HOST
-application.config['MYSQL_USER'] = constants.MYSQL_USERNAME
-application.config['MYSQL_PASSWORD'] = constants.MYSQL_PASSWORD
-application.config['MYSQL_DB'] = constants.MYSQL_DB
+application.config['MYSQL_HOST'] = os.environ['MYSQL_HOST']
+application.config['MYSQL_USER'] = os.environ['MYSQL_USERNAME']
+application.config['MYSQL_PASSWORD'] = os.environ['MYSQL_PASSWORD']
+application.config['MYSQL_DB'] = os.environ['MYSQL_DB']
     
 mysql = MySQL(application)
 
@@ -149,7 +148,7 @@ def dele():
     cur = conn.cursor()
     res2 = cur.execute("SELECT * FROM earthquake")
     cur.execute("DELETE FROM earthquake where time = %s and mag between %s and %s", (mydate, mag_from, mag_to))
-    cur.execute("SELECT CHANGES()")
+    cur.execute("SELECT ROW_COUNT()")
     res = cur.fetchall()
     return render_template("test3.html", result=res)
 
