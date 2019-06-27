@@ -6,3 +6,4 @@ numpy
 flask_mysqldb
 Flask-Session
 pyinotify
+flask_socketio
