@@ -31,7 +31,7 @@ def background_thread():
     handler = ModHandler()
     wm = pyinotify.WatchManager()
     notifier = pyinotify.Notifier(wm, handler)
-    wm.add_watch(session.get('toggle', False), pyinotify.IN_CLOSE_WRITE)
+    wm.add_watch(session.get('static/test.txt', False), pyinotify.IN_CLOSE_WRITE)
     notifier.loop()
 
 @socketio.on('connect')
@@ -47,9 +47,15 @@ def hello_world():
     if(session.get('toggle', False)):
         res = 'a.jpg'
         session['toggle'] = False
+        f= open("static/test.txt","w+")
+        f.write('False')
+        f.close()
     else:
         res = 'b.jpg'
         session['toggle'] = True
+        f= open("static/test.txt","w+")
+        f.write('True')
+        f.close()
     response_time = datetime.now()
     elapsed_time = response_time - request_received
     return render_template("index.html", result=res, request_received=request_received, response_time=response_time, elapsed_time=elapsed_time, async_mode=socketio.async_mode)
