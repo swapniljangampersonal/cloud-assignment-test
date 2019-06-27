@@ -44,7 +44,8 @@ def hello_world():
         res = 'b.jpg'
         session['toggle'] = True
     response_time = datetime.now()
-    return render_template("index.html", result=res, request_received=request_received, response_time=response_time)
+    elapsed_time = response_time - request_received
+    return render_template("index.html", result=res, request_received=request_received, response_time=response_time, elapsed_time=elapsed_time)
 
 # @application.route('/earthquake', methods=['GET'])
 # def get_earthquakes():
