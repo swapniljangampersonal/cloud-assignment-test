@@ -10,7 +10,7 @@ from timezonefinder import TimezoneFinder
 import sqlite3
 import math
 import numpy
-import constants
+from constants import *
 
 application = Flask(__name__)
 
