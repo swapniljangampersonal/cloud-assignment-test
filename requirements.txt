@@ -3,3 +3,4 @@ timezonefinder
 python-dateutil
 pytz
 numpy
+flask_mysqldb
