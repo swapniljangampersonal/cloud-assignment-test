@@ -34,6 +34,12 @@ def background_thread():
     wm.add_watch(session.get('toggle', False), pyinotify.IN_CLOSE_WRITE)
     notifier.loop()
 
+@socketio.on('connect')
+def test_connect():
+    global thread
+    if thread is None:
+        thread = socketio.start_background_task(target=background_thread)
+
 @application.route('/')
 def hello_world():
     request_received = datetime.now()
