@@ -1,0 +1,54 @@
+<html>
+        <style>
+                table {
+                    font-family: arial, sans-serif;
+                    border-collapse: collapse;
+                    width: 100%;
+                }
+            
+                td,
+                th {
+                    border: 1px solid #dddddd;
+                    text-align: left;
+                    padding: 8px;
+                }
+            
+                tr:nth-child(even) {
+                    background-color: #dddddd;
+                }
+            </style>
+            <meta charset="UTF-8">
+    <body>
+        <center>
+            <h1>Jangam, Swapnil Surendra</h1>
+            <h3>1001550608</h3>
+        </center>
+        Count: {{result|length}}
+            <table id="employees" style="width:100%">
+                    <tbody>
+                        <tr>
+                            <th>Time</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Depth</th>
+                            <th>Magnitude</th>
+                            <th>rms</th>
+                            <th>Place</th>
+                        </tr>
+        {% if result %}
+            {% for row in result %}
+            <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                    <td>{{ row[5] }}</td>
+                    <td>{{ row[6] }}</td>
+                </tr>
+            {% endfor %}
+        {% endif %}
+        </tbody>
+        </table>
+    </body>
+</html>
