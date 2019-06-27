@@ -10,7 +10,6 @@ from timezonefinder import TimezoneFinder
 import sqlite3
 import math
 import numpy
-from flask.ext.session import Session
 
 SESSION_TYPE = 'filesystem'
 application = Flask(__name__)
@@ -21,7 +20,6 @@ application = Flask(__name__)
 # application.config['MYSQL_DB'] = os.environ['MYSQL_DB']
 application.secret_key = 'super secret key'
 application.config['SESSION_TYPE'] = 'filesystem'
-sess = Session()
 # mysql = MySQL(application)
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -168,4 +166,4 @@ def hello_world():
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=port, debug=True)
     # sess.init_app(application)
-    sess.init_app(application)
+    session.init_app(application)
