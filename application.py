@@ -1,145 +1,118 @@
 from flask import Flask, render_template, request, session
-from datetime import datetime
-import os
-import timezonefinder
-import dateutil
-import pytz
-import numpy
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
+import os, csv, sqlite3
+
 application = Flask(__name__)
-APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-application.config['MYSQL_HOST'] = os.environ['MYSQL_HOST']
-application.config['MYSQL_USER'] = os.environ['MYSQL_USERNAME']
-application.config['MYSQL_PASSWORD'] = os.environ['MYSQL_PASSWORD']
-application.config['MYSQL_DB'] = os.environ['MYSQL_DB']
-mysql = MySQL(application)
+application.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQLALCHEMY_DATABASE_URI']
+db = SQLAlchemy(application)
+inmemory = sqlite3.connect(':memory:')
 
-print(os.getenv("PORT"))
+class Fall(db.Model):
+    __tablename__ = 'fall'
+    id = db.Column(db.Integer, primary_key=True)
+    course = db.Column(db.Integer)
+    section = db.Column(db.Integer)
+    days = db.Column(db.String(20))
+    start_time = db.Column(db.TIMESTAMP)
+    end_time = db.Column(db.TIMESTAMP)
+    instructor = db.Column(db.String(20))
+    max_students = db.Column(db.Integer)
+
+    def __init__(self, course, section,days,start_time,end_time,instructor,max_students):
+        self.course = course
+        self.section = section
+        self.days = days
+        self.start_time = start_time
+        self.end_time = end_time
+        self.instructor = instructor
+        self.max_students = max_students
+
+    def __repr__(self):
+        return '<Course %r>' % self.course
+
+class Mapping(db.Model):
+    __tablename__ = 'mapping'
+    id = db.Column(db.Integer, primary_key=True)
+    fname = db.Column(db.String(20))
+    lname = db.Column(db.String(20))
+    course = db.Column(db.Integer)
+    section = db.Column(db.Integer)
+
+    def __init__(self, fname, lname, course, section):
+        self.fname = fname
+        self.lname = lname
+        self.course = course
+        self.section = section
+
+
 port = int(os.getenv("PORT", 5000))
 
-def get_connection():
-    return mysql.connection
-
-
 @application.route('/')
+def myindex():
+    courses = Fall.query.all()
+    return render_template("index.html", result=courses)
+
+@application.route('/enrollme')
 def hello():
-    return render_template("index.html")
+    fname = request.args['fname']
+    lname = request.args['lname']
+    inmemory = sqlite3.connect(':memory:')
+    cur = inmemory.cursor()
+    cur.execute("create table if not exists students (idnum INT PRIMARY KEY, fname varchar(20), lname varchar(20), age int, credit int);")
+    inmemory.commit()
+    cur.execute("SELECT COUNT(*) FROM students")
+    res = cur.fetchone()
+    if res[0] == 0:
+        with open('static/students.csv','r') as fin: 
+            dr = csv.DictReader(fin)
+            to_db = [(i['IdNum'], i['Fname'], i['Lname'], i['Age'], i['Credit']) for i in dr]
+        cur.executemany("INSERT INTO students (IdNum,Fname,Lname,Age,Credit) VALUES (?, ?, ?, ?, ?);", to_db)
+        inmemory.commit()
+    cur = inmemory.cursor()
+    cur.execute("Select count(*) from students where Fname = ? and Lname = ?",(fname,lname))
+    checkstu = cur.fetchone()
+    if checkstu[0] == 0:
+        return "Please enter valid student name"
+    class_one = int(request.args['class_one'])
+    class_two = int(request.args['class_two'])
+    class_three = int(request.args['class_three'])
+    res1 = ''
+    res2 = ''
+    res3 = ''
+    course_one = Fall.query.filter_by(id=class_one).with_for_update().one()
+    if course_one.max_students >= 1:
+        course_one.max_students = course_one.max_students - 1
+        db.session.commit()
+        new_mapping = Mapping(fname, lname, course_one.course, course_one.section)
+        db.session.add(new_mapping)
+        db.session.commit()
+        res1 = "Registered : " + course_one.instructor +" "+ str(course_one.section) +" "+ str(course_one.course)
+    else:
+        res1 = "Not registered : " + course_one.instructor +" "+ str(course_one.section) +" "+ str(course_one.course)
 
-@application.route('/earthquake', methods=['GET'])
-def get_earthquakes():
-    mag_from = request.args['magFrom'] if 'magFrom' in request.args else ''
-    mag_to = request.args['magTo'] if 'magTo' in request.args else ''
-    days = request.args['days'] if 'days' in request.args else ''
-    latitude = request.args['lat'] if 'lat' in request.args else ''
-    longitude = request.args['long'] if 'long' in request.args else ''
-    distance = request.args['distance'] if 'distance' in request.args else ''
-    CUR_cos_lat = ''
-    CUR_sin_lat = ''
-    CUR_cos_lng = ''
-    CUR_sin_lng = ''
-    cos_allowed_distance = ''
-    if latitude and longitude and distance:
-        CUR_cos_lat = math.cos(float(latitude) * math.pi / 180)
-        CUR_sin_lat = math.sin(float(latitude) * math.pi / 180)
-        CUR_cos_lng = math.cos(float(longitude) * math.pi / 180)
-        CUR_sin_lng = math.sin(float(longitude) * math.pi / 180)
-        cos_allowed_distance = math.cos(float(distance) / 6371) # This is in KM
-        print("CUR_cos_lat: " + str(CUR_cos_lat))
-        print("CUR_sin_lat: " + str(CUR_sin_lat))
-        print("CUR_cos_lng: " + str(CUR_cos_lng))
-        print("CUR_sin_lng: " + str(CUR_sin_lng))
-        print("cos_allowed_distance: " + str(cos_allowed_distance))
-    conn = get_connection()
-    cur = conn.cursor()
-    #cur.execute("SELECT time,latitude,longitude,depth,mag,rms,place FROM earthquake WHERE (%s = '' or %s = '' or mag BETWEEN %s AND %s) AND (%s = '' or time BETWEEN date('now', '-%s days') AND date('now')) AND (%s = '' OR %s * sin_lat + %s * cos_lat * (cos_long * %s + sin_long * %s) > %s)", (mag_from, mag_to, mag_from, mag_to, days, days,CUR_sin_lat, CUR_sin_lat, CUR_cos_lat, CUR_cos_lng, CUR_sin_lng, cos_allowed_distance))
-    cur.execute("SELECT * FROM earthquake WHERE (%s = '' or %s = '' or mag BETWEEN %s AND %s)", (mag_from, mag_to, mag_from, mag_to))
-    res = cur.fetchall()
-    return render_template('test.html', result=res, content_type='application/json')
+    course_two = Fall.query.filter_by(id=class_two).with_for_update().one()
+    if course_two.max_students >= 1:
+        course_two.max_students = course_two.max_students - 1
+        db.session.commit()
+        new_mapping = Mapping(fname, lname, course_two.course, course_two.section)
+        db.session.add(new_mapping)
+        db.session.commit()
+        res2 = "Registered : " + course_two.instructor +" "+ str(course_two.section) +" "+ str(course_two.course)
+    else:
+        res2 = "Not registered : " + course_two.instructor +" "+ str(course_two.section) +" "+ str(course_two.course)
 
-@application.route('/csv', methods=['POST'])
-def upload_csv():
-    file = request.files['csvFile']
-    target = os.path.join(APP_ROOT, 'static')
-    file.save(os.path.join(target, file.filename))
-    f = open(os.path.join(target, file.filename), "r")
-    print(f)
-    conn = get_connection()
-    cur = conn.cursor()
-    sql = "LOAD DATA LOCAL INFILE '"+ os.path.join('./static', file.filename) +"' INTO TABLE earthquake FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\r' IGNORE 1 LINES (time,latitude,longitude,depth,mag,rms,place)"
-    print(sql)
-    cur.execute(sql)
-    conn.commit()
-    cur.close()
-    res = get_initial_data()
-    print(res)
-    return render_template("uploaded.html", result=res)
-
-def get_initial_data():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT COUNT(*), MAX(mag) from earthquake")
-    res = cur.fetchall()
-    print(res[0][1])
-    cur.execute("SELECT place from earthquake where mag = "+str(res[0][1]))
-    res2 = cur.fetchall()
-    cur.close()
-    return [res[0][0],res[0][1],res2[0][0]]
-
-def get_timezone_date(longitude, latitude, dt):
-    datetime_obj_naive = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S.%f")
-    mytimezone = tf.timezone_at(lng=float(longitude), lat=float(latitude))
-    if not mytimezone:
-        return datetime_obj_naive.strftime(fmt)[:-3]
-    utcmoment = datetime_obj_naive.replace(tzinfo=pytz.utc)
-    localDatetime = utcmoment.astimezone(pytz.timezone(str(mytimezone)))
-    return localDatetime.strftime(fmt)[:-3]
-
-@application.route('/delete', methods=['GET'])
-def deleteall():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM earthquake")
-    conn.commit()
-    cur.close()
-    return "Successfully deleted all data"
-
-@application.route('/magrange', methods=['GET'])
-def mag_range():
-    mag_from = request.args['magFrom'] if 'magFrom' in request.args else ''
-    mag_to = request.args['magTo'] if 'magTo' in request.args else ''
-    if mag_from and mag_to:
-        mag_from = float(mag_from)
-        mag_to = float(mag_to)
-        my_range = numpy.arange(mag_from, mag_to, 0.1)
-        i = 0
-        res = []
-        conn = get_connection()
-        cur = conn.cursor()
-        while i < len(my_range):
-            if(i+1 >= len(my_range)):
-                break
-            cur.execute("SELECT COUNT(*) FROM earthquake where mag between "+str(my_range[i])+" and "+str(my_range[i+1]))
-            myres = cur.fetchall()
-            res.append([myres[0][0], my_range[i], my_range[i+1]])
-            i = i + 1
-        return render_template("test2.html", result=res)
-    return ""
-
-@application.route('/deleteme', methods=['GET'])
-def dele():
-    mag_from = request.args['magFrom'] if 'magFrom' in request.args else ''
-    mag_to = request.args['magTo'] if 'magTo' in request.args else ''
-    mydate = request.args['date'] if 'date' in request.args else ''
-    mydate = dateutil.parser.parse(mydate).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(mydate)
-    conn = get_connection()
-    cur = conn.cursor()
-    res2 = cur.execute("SELECT * FROM earthquake")
-    cur.execute("DELETE FROM earthquake where time = %s and mag between %s and %s", (mydate, mag_from, mag_to))
-    cur.execute("SELECT ROW_COUNT()")
-    res = cur.fetchall()
-    return render_template("test3.html", result=res)
+    course_three = Fall.query.filter_by(id=class_two).with_for_update().one()
+    if course_three.max_students >= 1:
+        course_three.max_students = course_three.max_students - 1
+        db.session.commit()
+        new_mapping = Mapping(fname, lname, course_three.course, course_three.section)
+        db.session.add(new_mapping)
+        db.session.commit()
+        res3 = "Registered : " + course_three.instructor +" "+ str(course_three.section) +" "+ str(course_three.course)
+    else:
+        res3 = "Not registered : " + course_three.instructor +" "+ str(course_three.section) +" "+ str(course_three.course)
+    return "<center><h1>"+res1+"<br>"+res2+"<br>"+res3+"</h1></center>"
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=port, debug=True)
