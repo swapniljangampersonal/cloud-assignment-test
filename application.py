@@ -53,6 +53,17 @@ def myindex():
     courses = Fall.query.all()
     return render_template("index.html", result=courses)
 
+@application.route('/getmyclasses')
+def getclasses():
+    fname = request.args['fname']
+    lname = request.args['lname']
+    res = '<center><h1>'+fname +" "+ lname +"'s Classes <br>"
+    courses = Mapping.query.filter_by(fname=fname, lname=lname).all()
+    for course in courses:
+        res += str(course.course) +" "+ str(course.section) +"<br>"
+    res += "</h1></center>"
+    return res
+
 @application.route('/enrollme')
 def hello():
     fname = request.args['fname']
@@ -102,7 +113,7 @@ def hello():
     else:
         res2 = "Not registered : " + course_two.instructor +" "+ str(course_two.section) +" "+ str(course_two.course)
 
-    course_three = Fall.query.filter_by(id=class_two).with_for_update().one()
+    course_three = Fall.query.filter_by(id=class_three).with_for_update().one()
     if course_three.max_students >= 1:
         course_three.max_students = course_three.max_students - 1
         db.session.commit()
